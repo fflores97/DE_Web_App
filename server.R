@@ -79,7 +79,7 @@ shinyServer(function(input, output) {
     input$beginDE,#Button beginDE triggers this
     {
       expressionData <- expressionData()[rowSums(expressionData()) > 10,]
-      expressionData <- expressionData[,order(colnames(expressionData()))]
+      expressionData <- expressionData()[,order(colnames(expressionData()))]
       output$beginningMessage<-renderText({"Beginning DESeq"})
       designFormula <- as.formula(paste("", paste(input$userDesignChoice, collapse=" + "), sep="~ "))
       dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
