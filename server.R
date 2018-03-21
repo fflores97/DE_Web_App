@@ -1,7 +1,6 @@
-library(shinydashboard)
-library(DT)
+# library(shinydashboard)
+# library(DT)
 library(DESeq2)
-source("scripts/uploader.R")
 # source("scripts/DESeq.R")
 options(shiny.trace=T)
 shinyServer(function(input, output) {
@@ -30,7 +29,7 @@ shinyServer(function(input, output) {
   
   
   # Expression Data Summary ####
-  expressionSummary<-DT::renderDataTable(
+  output$expressionSummary<-DT::renderDataTable(
     expressionData()[,c(1:input$expressionNumber)],
     options=list(scrollX=T,scroller=T)
   )
@@ -53,7 +52,7 @@ shinyServer(function(input, output) {
   
   
   # Col Data Summary ####
-  colDataSummary<-DT::renderDataTable(
+  output$colDataSummary<-DT::renderDataTable(
     colData()[,c(1:input$colDataNumber)],
     options=list(scrollX=T,scroller=T)
   )
