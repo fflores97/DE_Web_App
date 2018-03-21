@@ -28,13 +28,13 @@ shinyUI(dashboardPage(
             solidHeader= TRUE,
             status="info",
             width=12,
-            uploaderExpression(),
-            uploaderColData()
+            uploaderExpressionUI(),
+            uploaderColDataUI()
           )
         ),
         fluidRow(
           box(
-            title="Summary of Expression Data",
+            title="Preview of Expression Data",
             solidHeader = TRUE,
             status="info",
             width = 12,  
@@ -42,7 +42,7 @@ shinyUI(dashboardPage(
         ),
         fluidRow(
           box(
-            title="Summary of Col Data",
+            title="Preview of Col Data",
             solidHeader = TRUE,
             status="info",
             width = 12,  
@@ -60,9 +60,13 @@ shinyUI(dashboardPage(
         tabName="DESeq2",
         "Hello",
         uiOutput("designChoices"),
-        actionButton("beginDE", label = "Action"),
-        textOutput("action"),
-        box(DT::dataTableOutput("res",width = "auto"))
+        actionButton("beginDE", label = "Begin DESeq"),
+        fluidRow(textOutput("beginningMessage")),
+        fluidRow(verbatimTextOutput("sizeFactorMessage")),
+        fluidRow(verbatimTextOutput("dds")),
+        fluidRow(verbatimTextOutput("DESeqMessage")),
+        fluidRow(verbatimTextOutput("DESeqFinishedMessage")),
+        fluidRow(downloadButton("downloadData", "Download"))
       ),
       
       tabItem(
