@@ -34,7 +34,7 @@ uploaderExpressionUI<-function(){
 }
 
 # Coldata ####
-uploaderColDataUI<-function(){
+uploaderColDataUI<-function(input=input,output=output){
   box(
     "Please upload colData table here",
     tags$hr(),
@@ -68,60 +68,64 @@ uploaderColDataUI<-function(){
   )
 }
 
-uploaderExpressionServer<-function(input){
-  uploaderExpressionServerOutput<-list()
-  # Expression Data Reader ####
-  expressionData<-reactive(
-    {
-      if (is.null(input$expressionDataFile)) {
-        # User has not uploaded a file yet
-        return(NULL)
-      }
-      inFileExpression<-input$expressionDataFile
-      read.csv(
-        file =inFileExpression$datapath,
-        header=input$expressionHeader,
-        sep=input$expressionSep,
-        quote=input$expressionQuote,
-        stringsAsFactors = F,
-        row.names = 1
-      )
-    })
-  
-  # Expression Data Summary ####
-  expressionSummary<-DT::renderDataTable(
-    expressionData()[,c(1:input$expressionNumber)],
-    options=list(scrollX=T,scroller=T)
-  )
-  uploaderExpressionServerOutput$expressionData<-expressionData
-  uploaderExpressionServerOutput$expressionSummary<-expressionSummary
-  return(uploaderExpressionServerOutput)
-}
+# uploaderServer<-function(input=input,output=output){
+#   uploaderServerOutput<-list()
+#   # Expression Data Reader ####
+#   expressionData<-eventReactive(
+#     input$uploadExpression,
+#     {
+#       if (is.null(input$expressionDataFile)) {
+#         # User has not uploaded a file yet
+#         return(NULL)
+#       }
+#       inFileExpression<-input$expressionDataFile
+#       read.csv(
+#         file =inFileExpression$datapath,
+#         header=input$expressionHeader,
+#         sep=input$expressionSep,
+#         quote=input$expressionQuote,
+#         stringsAsFactors = F,
+#         row.names = 1
+#       )
+#     })
+#   
+#   
+#   # Expression Data Summary ####
+#   expressionSummary<-DT::renderDataTable(
+#     expressionData[,c(1:input$expressionNumber)],
+#     options=list(scrollX=T,scroller=T)
+#   )
+#   
+#   # Column Data Reader ####
+#   colData<-eventReactive(
+#     input$uploadColData,
+#     {
+#       if (is.null(input$colDataFile)) {
+#         # User has not uploaded a file yet
+#         return(NULL)
+#       }
+#       inFileColData<-input$colDataFile
+#       read.csv(
+#         file = inFileColData$datapath,
+#         header = input$colDataHeader,
+#         sep = input$colDataSep,
+#         quote = input$colDataQuote,
+#         row.names = 1
+#       )
+#     })
+#   
+#   
+#   # Col Data Summary ####
+#   colDataSummary<-DT::renderDataTable(
+#     colData()[,c(1:input$colDataNumber)],
+#     options=list(scrollX=T,scroller=T)
+#   )
+#   uploaderServerOutput$expressionData<-expressionData
+#   uploaderServerOutput$expressionSummary<-expressionSummary
+#   uploaderServerOutput$colData<-colData
+#   uploaderServerOutput$colDataSummary<-colDataSummary
+#   return(uploaderServerOutput)
+# }
 
-uploaderColDataServer<-function(input){
-  uploaderColDataServerOutput<-list()
-  # Column Data Reader ####
-  colData<-reactive({
-    if (is.null(input$colDataFile)) {
-      # User has not uploaded a file yet
-      return(NULL)
-    }
-    inFileColData<-input$colDataFile
-    read.csv(
-      file = inFileColData$datapath,
-      header = input$colDataHeader,
-      sep = input$colDataSep,
-      quote = input$colDataQuote,
-      row.names = 1
-    )
-  })
-  
-  # Col Data Summary ####
-  colDataSummary<-DT::renderDataTable(
-    colData()[,c(1:input$colDataNumber)],
-    options=list(scrollX=T,scroller=T)
-  )
-  uploaderColDataServerOutput$colData<-colData()
-  uploaderColDataServerOutput$colDataSummary<-colDataSummary
-  return(uploaderColDataServerOutput)
-}
+
+
