@@ -60,6 +60,9 @@ shinyUI(dashboardPage(
         tabName="DESeq2",
         "Hello",
         uiOutput("designChoices"),
+        actionButton("beginDE", label = "Action"),
+        textOutput("action"),
+        box(DT::dataTableOutput("res",width = "auto")),
         actionButton("beginDE", label = "Begin DESeq"),
         fluidRow(textOutput("beginningMessage")),
         fluidRow(verbatimTextOutput("sizeFactorMessage")),
@@ -70,7 +73,7 @@ shinyUI(dashboardPage(
       ),
       
       tabItem(
-       tabName = "edgeR" 
+        tabName = "edgeR" 
       )
       
     )
