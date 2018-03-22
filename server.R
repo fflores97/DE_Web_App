@@ -55,27 +55,38 @@ shinyServer(function(input, output,session) {
     options=list(scrollX=T,scroller=T)
   )
   
-  designChoices <- colnames(colData()) #presents user the choice for DE design
-  groupChoices<- unique(designChoices)
   
-  output$designChoicesDESeq <- renderUI({  #selects 
+  
+  output$designChoicesDESeq <- renderUI({ #selects 
     # If missing input, return to avoid error later in function
     if(is.null(input$colDataFile))
       return()
+
+    designChoices <- colnames(colData()) #presents user the choice for DE design
+    
     # Create the checkboxes and select none by default
     checkboxGroupInput("userDesignChoiceDESeq", "Choose columns", 
                        choices  = designChoices,
                        selected = NULL)
-    numericInput("pValueFilterDESeq","P Value")
-    numericInput("absFCMinDESeq","Minimum Absolute Fold Change")
-    radioButtons("userGroup1DESeq", "Choose Group 1", 
-                       choices  = groupChoices,
-                       selected = NULL)
-    radioButtons("userGroup2DESeq", "Choose Group 2", 
-                 choices  = groupChoices,
-                 selected = NULL)
-    textInput(filePrefixDESeq,"File Prefix")
   })
+
+  output$pValueFilterDESeq <-renderUI({numericInput("pValueFilterDESeq","P Value",0.1)})
+  output$absFCMinDESeq <-renderUI({numericInput("absFCMinDESeq","Minimum Absolute Fold Change",1)})
+  output$userGroup1DESeq <-renderUI({
+    chosenDesign1<-input$userDesignChoiceDESeq
+    groupChoices1<- unique(colData()[chosenDesign1][[1]])
+    radioButtons("userGroup1DESeq", "Choose Group 1",
+                 choices  = groupChoices1,
+                 selected = NULL)})
+  output$userGroup2DESeq <-renderUI({ 
+    chosenDesign2<-input$userDesignChoiceDESeq
+    groupChoices2<- unique(colData()[chosenDesign2][[1]])
+    radioButtons("userGroup2DESeq", "Choose Group 2",
+                 choices  = groupChoices2,
+                 selected = NULL)})
+  output$filePrefixDESeq <-renderUI({textInput("filePrefixDESeq","File Prefix",value = "")})
+  
+
   
   # DESeq ####
   observeEvent( 
@@ -91,26 +102,68 @@ shinyServer(function(input, output,session) {
           dds <- DESeq2::estimateSizeFactors(dds)
           dds <- DESeq2::DESeq(dds)
           res <- DESeq2::results(dds)
-          
-          for (choices in input$userDesignChoiceDESeq){
-            differentialRes[[choices]] <- DESeq2WriteDiff(
-              deseqData = dds, 
-              diffColumn = choices, 
-              group1 = as.character(input$userGroup1DESeq), 
-              group2 = as.character(input$userGroup2DESeq), 
-              outputFolder = tempdir(), 
-              outputFilePrefix = input$filePrefixDESeq, 
-              absLog2FCMin = log2(input$absFCMinDESeq), 
-              geneDescCSV = NA, 
-              padjFilter = input$pValueFilterDESeq
-            )
-          }
+          # for (choices in input$userDesignChoiceDESeq){
+          #  DESeq2WriteDiff( #Credits to Ekram here
+              # deseqData = dds
+              # diffColumn = input$userDesignChoiceDESeq
+              # group1 = as.character(input$userGroup1DESeq)
+              # group2 = as.character(input$userGroup2DESeq)
+              # outputFolder = tempdir()
+              # outputFilePrefix = input$filePrefixDESeq
+              # absLog2FCMin = log2(input$absFCMinDESeq)
+              # geneDescCSV = NA
+              # padjFilter = input$pValueFilterDESeq
+          #   )
+          # }
           
           output$DESeqFinishedMessage<-renderText("DESeq Finished!")
           output$downloadDESeqHandler<-downloadHandler(
-            filename = "res.csv",
+            # filename = "res.csv",
+            filename = "res.zip",
             content = function(file) {
-              write.csv(res, file, row.names = T)
+              # Original - keep
+              # write.csv(res, file, row.names = T)
+              
+              deseqData = dds
+              diffColumn = input$userDesignChoiceDESeq
+              group1 = as.character(input$userGroup1DESeq)
+              group2 = as.character(input$userGroup2DESeq)
+              outputFolder = tempdir()
+              outputFilePrefix = input$filePrefixDESeq
+              absLog2FCMin = log2(input$absFCMinDESeq)
+              geneDescCSV = NA
+              padjFilter = input$pValueFilterDESeq
+              diffDF <- as.data.frame(results(deseqData, contrast = c(diffColumn, group1, group2)))
+              diffDF$Gene.Symbol <- rownames(diffDF)
+              diffDF <- diffDF[,c(7,1:6)]
+              diffDF <- diffDF[!is.na(diffDF$log2FoldChange),]
+              diffDF <- diffDF[!is.na(diffDF$padj),]
+              diffDF <- diffDF[order(diffDF$padj, -abs(diffDF$log2FoldChange)),]
+              diffDF2 <- diffDF[abs(diffDF$log2FoldChange) >= absLog2FCMin,]
+              diffDF2 <- diffDF2[diffDF2$padj <= padjFilter,]
+              # if (!is.na(geneDescCSV))
+              # {
+              #   geneDesc <- read.csv(geneDescCSV, stringsAsFactors = FALSE)
+              #   diffDF2$Gene.Name <- geneDesc$Gene.Name[match(rownames(diffDF2), geneDesc$Gene.Symbol)]
+              #   diffDF2$Gene.Desc <- geneDesc$Gene.Desc[match(rownames(diffDF2), geneDesc$Gene.Symbol)]
+              # }
+              
+              temp1 <- paste(gsub('/$','',outputFolder),'/',outputFilePrefix,'.all.tsv', sep = '')
+              temp2 <- paste(gsub('/$','',outputFolder),'/',outputFilePrefix,'.all.csv', sep = '')
+              temp3 <- paste(gsub('/$','',outputFolder),'/',outputFilePrefix,'.filtered.tsv', sep = '')
+              temp4 <- paste(gsub('/$','',outputFolder),'/',outputFilePrefix,'.filtered.up.tsv', sep = '')
+              temp5 <- paste(gsub('/$','',outputFolder),'/',outputFilePrefix,'.filtered.down.tsv', sep = '')
+              temp6 <- paste(gsub('/$','',outputFolder),'/',outputFilePrefix,'.filtered.csv', sep = '')
+              
+              write.table(diffDF[,c(1,7)], file = temp1, sep = '\t', quote = FALSE, row.names = FALSE)
+              write.csv(diffDF, file = temp2, row.names = FALSE)
+              write.table(diffDF2[,c(1,7)], file = temp3, sep = '\t', quote = FALSE, row.names = FALSE)
+              write.table(diffDF2[diffDF2$log2FoldChange >= 0,c(1,7)], file = temp4, sep = '\t', quote = FALSE, row.names = FALSE)
+              write.table(diffDF2[diffDF2$log2FoldChange < 0,c(1,7)], file = temp5, sep = '\t', quote = FALSE, row.names = FALSE)
+              write.csv(diffDF2, file = temp6, row.names = FALSE)
+              
+              
+              zip(file,c(temp1,temp2,temp3,temp4,temp5,temp6))
             }
           )
           output$downloadDESeqResults<-renderUI({

@@ -67,6 +67,11 @@ shinyUI(
             status="info",
             width=6,
             uiOutput("designChoicesDESeq"),
+            uiOutput("pValueFilterDESeq"),
+            uiOutput("absFCMinDESeq"),
+            uiOutput("userGroup1DESeq"),
+            uiOutput("userGroup2DESeq"),
+            uiOutput("filePrefixDESeq"),
             actionButton("beginDE", label = "Begin DESeq")
           ),
           box(
