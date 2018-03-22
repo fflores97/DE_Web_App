@@ -3,14 +3,12 @@
 library(DESeq2)
 # source("scripts/DESeq.R")
 options(shiny.trace=T)
-shinyServer(function(input, output) {
-  
-  # reactive({
-  #   uploadServer<-uploaderServer()
-  #   output$expressionSummary<-uploadServer$expressionSummary
-  #   output$colDataSummary<-upload$colDataSummary
-  # })
-  expressionData<-reactive(
+shinyServer(function(input, output,session) {
+  session$onSessionEnded(stopApp)
+  runcodeServer()
+  # Expression Data Reader
+  expressionData<-eventReactive(
+    input$uploadExpression,
     {
       if (is.null(input$expressionDataFile)) {
         # User has not uploaded a file yet
@@ -58,8 +56,6 @@ shinyServer(function(input, output) {
   )
   
   
-  
-  
   output$designChoices <- renderUI({
     # If missing input, return to avoid error later in function
     if(is.null(input$colDataFile))
@@ -74,29 +70,45 @@ shinyServer(function(input, output) {
                        selected = NULL)
   })
   
-  
+  # DESeq ####
+  DESeqFinished <- F
   observeEvent( 
     input$beginDE,#Button beginDE triggers this
     {
-      expressionData <- expressionData()[rowSums(expressionData()) > 10,]
-      expressionData <- expressionData()[,order(colnames(expressionData()))]
-      output$beginningMessage<-renderText({"Beginning DESeq"})
-      designFormula <- as.formula(paste("", paste(input$userDesignChoice, collapse=" + "), sep="~ "))
-      dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
-      output$sizeFactorMessage <- renderPrint({"Estimating Size Factors"})
-      dds <- DESeq2::estimateSizeFactors(dds)
-      output$DESeqMessage<-renderPrint({"Beginning DESeq"})
-      output$dds <- renderPrint({dds})
-      dds <- DESeq2::DESeq(dds)
-      res <- DESeq2::results(dds)
-      output$DESeqFinishedMessage<-renderPrint({"Finished DESeq"})
-      output$downloadData <- downloadHandler(
-        filename = "res.csv",
-        content = function(file) {
-          write.csv(res, file, row.names = T)
-        }
-      )
+      observe({
+        withProgress(message = "DESeq in Progress",value=0,
+        {
+          
+          expressionData <- expressionData()[rowSums(expressionData()) > 10,]
+          expressionData <- expressionData()[,order(colnames(expressionData()))]
+          designFormula <- as.formula(paste("", paste(input$userDesignChoice, collapse=" + "), sep="~ "))
+          dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
+          dds <- DESeq2::estimateSizeFactors(dds)
+          dds <- DESeq2::DESeq(dds)
+          res <- DESeq2::results(dds)
+          output$DESeqFinishedMessage<-renderText("DESeq Finished!")
+          output$downloadDESeqHandler<-downloadHandler(
+            filename = "res.csv",
+            content = function(file) {
+              write.csv(res, file, row.names = T)
+            }
+          )
+          output$downloadDESeqResults<-renderUI({
+            downloadButton("downloadDESeqHandler","Download Results")
+          })
+              
+        
+          
+          
+          
+          
+          
+        })
+        
+      })
+      
     })
+  
   
 })
 

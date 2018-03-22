@@ -16,7 +16,8 @@ shinyUI(dashboardPage(
     tabItems(
       # Introduction ####
       tabItem(
-        tabName = "intro"
+        tabName = "intro",
+        runcodeUI()
       ),
       
       # Uploader #### 
@@ -58,17 +59,28 @@ shinyUI(dashboardPage(
       # DESeq2 #####
       tabItem(
         tabName="DESeq2",
-        "Hello",
-        uiOutput("designChoices"),
-        actionButton("beginDE", label = "Begin DESeq"),
-        fluidRow(textOutput("beginningMessage")),
-        fluidRow(verbatimTextOutput("sizeFactorMessage")),
-        fluidRow(verbatimTextOutput("dds")),
-        fluidRow(verbatimTextOutput("DESeqMessage")),
-        fluidRow(verbatimTextOutput("DESeqFinishedMessage")),
-        fluidRow(downloadButton("downloadData", "Download"))
+        fluidRow(
+          box(
+            title="Select Design",
+            solidHeader= TRUE,
+            status="info",
+            width=6,
+            uiOutput("designChoices"),
+            actionButton("beginDE", label = "Begin DESeq")
+          ),
+          box(
+            title="Download",
+            solidHeader = TRUE,
+            status="info",
+            width=6,
+            textOutput("DESeqFinishedMessage"),
+            uiOutput("downloadDESeqResults")
+            
+            # downloadButton("downloadData", "Download")
+            
+          )
+        )
       ),
-      
       tabItem(
        tabName = "edgeR" 
       )

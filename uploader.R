@@ -98,31 +98,3 @@ uploaderExpressionServer<-function(input){
   uploaderExpressionServerOutput$expressionSummary<-expressionSummary
   return(uploaderExpressionServerOutput)
 }
-
-uploaderColDataServer<-function(input){
-  uploaderColDataServerOutput<-list()
-  # Column Data Reader ####
-  colData<-reactive({
-    if (is.null(input$colDataFile)) {
-      # User has not uploaded a file yet
-      return(NULL)
-    }
-    inFileColData<-input$colDataFile
-    read.csv(
-      file = inFileColData$datapath,
-      header = input$colDataHeader,
-      sep = input$colDataSep,
-      quote = input$colDataQuote,
-      row.names = 1
-    )
-  })
-  
-  # Col Data Summary ####
-  colDataSummary<-DT::renderDataTable(
-    colData()[,c(1:input$colDataNumber)],
-    options=list(scrollX=T,scroller=T)
-  )
-  uploaderColDataServerOutput$colData<-colData()
-  uploaderColDataServerOutput$colDataSummary<-colDataSummary
-  return(uploaderColDataServerOutput)
-}
