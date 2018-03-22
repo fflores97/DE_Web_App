@@ -1,4 +1,5 @@
-shinyUI(dashboardPage(
+shinyUI(
+  dashboardPage(
   skin="purple",
   dashboardHeader(title = "DE Analysis"),
   dashboardSidebar(
@@ -17,7 +18,7 @@ shinyUI(dashboardPage(
       # Introduction ####
       tabItem(
         tabName = "intro",
-        runcodeUI()
+        runcodeUI(code = "shinyjs::alert()",includeShinyjs = T)
       ),
       
       # Uploader #### 
@@ -65,19 +66,16 @@ shinyUI(dashboardPage(
             solidHeader= TRUE,
             status="info",
             width=6,
-            uiOutput("designChoices"),
+            uiOutput("designChoicesDESeq"),
             actionButton("beginDE", label = "Begin DESeq")
           ),
           box(
-            title="Download",
+            title="Download Results",
             solidHeader = TRUE,
             status="info",
             width=6,
             textOutput("DESeqFinishedMessage"),
             uiOutput("downloadDESeqResults")
-            
-            # downloadButton("downloadData", "Download")
-            
           )
         )
       ),

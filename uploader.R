@@ -29,7 +29,7 @@ uploaderExpressionUI<-function(){
                  selected = ""),
     # How many columns to display ---
     numericInput("expressionNumber", "Columns to Display", value = 2),
-    actionButton("uploadExpression","Upload")
+    actionButton("uploadExpression","Process Expression Data")
   )
 }
 
@@ -63,8 +63,7 @@ uploaderColDataUI<-function(){
                              "Single Quote" = "'"),
                  selected = ""),
     # How many columns to display ---
-    numericInput("colDataNumber", "Columns to Display", value = 2),
-    actionButton("uploadColData","Upload")
+    numericInput("colDataNumber", "Columns to Display", value = 2)
   )
 }
 
