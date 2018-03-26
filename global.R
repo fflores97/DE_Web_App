@@ -1,5 +1,6 @@
-source("uploader.R")
+source("scripts/uploader.R")
 source("scripts/DESeq.R")
+source("scripts/downloadDESeq.R")
 library(shinydashboard)
 library(DT)
 library(shinyjs)
