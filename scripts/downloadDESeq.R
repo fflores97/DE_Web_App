@@ -1,4 +1,17 @@
-downloadDESeq<-function(deseqData,diffColumn,group1,group2,outputFolder=tempdir(),outputFilePrefix,absLog2FCMin,padjFilter){
+#' Title
+#'
+#' @param deseqData DESeq object 'dds' in most examples
+#' @param diffColumn Column from the infoTable to be used to find groups
+#' @param group1 Group 1 for comparison (must be a valid value in the infoTable)
+#' @param group2 Group 2 for comparison (must be a valid value in the infoTable)
+#' @param outputFolder Can choose an arbitrary folder (temps by default) 
+#' @param outputFilePrefix All files exported will have this as a prefix
+#' @param log2FCMin Minimum LFC to filter
+#' @param padjFilter Max pvalue to filter genes
+#'
+#' @return A download handler to be used in shiny
+
+downloadDESeq<-function(deseqData,diffColumn,group1,group2,outputFolder=tempdir(),outputFilePrefix="res",log2FCMin,padjFilter){
     downloadHandler(
       # filename = "res.csv",
       filename = "res.zip",
@@ -12,7 +25,7 @@ downloadDESeq<-function(deseqData,diffColumn,group1,group2,outputFolder=tempdir(
         # group2 = as.character(input$userGroup2DESeq)
         # outputFolder = tempdir()
         # outputFilePrefix = input$filePrefixDESeq
-        # absLog2FCMin = log2(input$absFCMinDESeq)
+        # log2FCMin = log2(input$absFCMinDESeq)
         # geneDescCSV = NA
         # padjFilter = input$pValueFilterDESeq
         diffDF <- as.data.frame(results(deseqData, contrast = c(diffColumn, group1, group2)))
@@ -21,7 +34,7 @@ downloadDESeq<-function(deseqData,diffColumn,group1,group2,outputFolder=tempdir(
         diffDF <- diffDF[!is.na(diffDF$log2FoldChange),]
         diffDF <- diffDF[!is.na(diffDF$padj),]
         diffDF <- diffDF[order(diffDF$padj, -abs(diffDF$log2FoldChange)),]
-        diffDF2 <- diffDF[abs(diffDF$log2FoldChange) >= absLog2FCMin,]
+        diffDF2 <- diffDF[abs(diffDF$log2FoldChange) >= log2FCMin,]
         diffDF2 <- diffDF2[diffDF2$padj <= padjFilter,]
         # if (!is.na(geneDescCSV))
         # {

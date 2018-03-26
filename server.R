@@ -6,7 +6,8 @@ options(shiny.trace=T)
 shinyServer(function(input, output,session) {
   session$onSessionEnded(stopApp) # So shiny closes on closing window
   runcodeServer() #Only for testing
-  # Expression Data Reader
+
+  # Expression Data Reader ####
   expressionData<-eventReactive(
     input$uploadExpression, #File is only processed once user clicks a button
     {
@@ -25,12 +26,6 @@ shinyServer(function(input, output,session) {
         check.names = F
       )
     })
-  observe({
-    expressionData <- expressionData()[rowSums(expressionData()) > 10,]
-    expressionData <- expressionData()[,order(colnames(expressionData()))]
-  })
-
-
 
   # Expression Data Summary ####
   output$expressionSummary<-DT::renderDataTable(
@@ -62,7 +57,7 @@ shinyServer(function(input, output,session) {
   )
 
 
-
+  # Design choice checkboxes ####
   output$designChoicesDESeq <- renderUI({ #selects
     # If missing input, return to avoid error later in function
     if(is.null(input$colDataFile))
@@ -76,6 +71,7 @@ shinyServer(function(input, output,session) {
                        selected = NULL)
   })
 
+  # User input for pValue, LFC, design of the experiment, and file Prefix
   output$pValueFilterDESeq <-renderUI({numericInput("pValueFilterDESeq","P Value",0.1)})
   output$absFCMinDESeq <-renderUI({numericInput("absFCMinDESeq","Minimum Absolute Fold Change",1)})
   output$userGroup1DESeq <-renderUI({
@@ -99,35 +95,29 @@ shinyServer(function(input, output,session) {
     input$beginDE,# Button beginDE triggers this
     {
         if (is.null(input$userDesignChoiceDESeq)){
-            return(NULL)
+            return(NULL) # So app doesn't crash without user input
         }
         observe({
         withProgress(message = "DESeq in Progress",value=0,
         {
+        # Filter data for counts that are too low
           expressionData <- expressionData()[rowSums(expressionData()) > 10,]
           expressionData <- expressionData()[,order(colnames(expressionData()))]
+          # Generate design formula
           designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
+          # Begin DESeq
+          incProgress(1/4) # Progress indicators
           dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
+          incProgress(1/2)
           dds <- DESeq2::estimateSizeFactors(dds)
+          incProgress(3/4)
           dds <- DESeq2::DESeq(dds)
-          res <- DESeq2::results(dds)
-          # for (choices in input$userDesignChoiceDESeq){
-          #  DESeq2WriteDiff( #Credits to Ekram here
-              # deseqData = dds
-              # diffColumn = input$userDesignChoiceDESeq
-              # group1 = as.character(input$userGroup1DESeq)
-              # group2 = as.character(input$userGroup2DESeq)
-              # outputFolder = tempdir()
-              # outputFilePrefix = input$filePrefixDESeq
-              # absLog2FCMin = log2(input$absFCMinDESeq)
-              # geneDescCSV = NA
-              # padjFilter = input$pValueFilterDESeq
-          #   )
-          # }
-
+          # Message to the user
           output$DESeqFinishedMessage<-renderText("DESeq Finished!")
-          output$downloadDESeqHandler<-downloadDESeq(deseqData=dds,diffColumn=input$userDesignChoiceDESeq,group1=as.character(input$userGroup1DESeq),group2=as.character(input$userGroup2DESeq),outputFilePrefix=input$fifilePrefixDESeq,absLog2FCMin=log2(input$absFCMinDESeq),padjFilter=input$pValueFilterDESeq)
+          # Download a zip file with the summarized results
+          output$downloadDESeqHandler<-downloadDESeq(deseqData=dds,diffColumn=input$userDesignChoiceDESeq,group1=as.character(input$userGroup1DESeq),group2=as.character(input$userGroup2DESeq),outputFilePrefix=input$filePrefixDESeq,absLog2FCMin=log2(input$absFCMinDESeq),padjFilter=input$pValueFilterDESeq)
 
+          # Download Button
           output$downloadDESeqResults<-renderUI({
             downloadButton("downloadDESeqHandler","Download Results")
           })
