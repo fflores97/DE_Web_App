@@ -20,8 +20,8 @@ shinyUI(
         tabName = "intro",
         runcodeUI(code = "shinyjs::alert()",includeShinyjs = T)
       ),
-      
-      # Uploader #### 
+
+      # Uploader ####
       tabItem(
         tabName = "uploader",
         fluidRow(
@@ -39,7 +39,7 @@ shinyUI(
             title="Preview of Expression Data",
             solidHeader = TRUE,
             status="info",
-            width = 12,  
+            width = 12,
             DT::dataTableOutput("expressionSummary",width = "auto"))
         ),
         fluidRow(
@@ -47,16 +47,20 @@ shinyUI(
             title="Preview of Col Data",
             solidHeader = TRUE,
             status="info",
-            width = 12,  
+            width = 12,
             DT::dataTableOutput("colDataSummary",width = "auto"))
         )
       ),
       # Summary ####
       tabItem(
-        tabName = "summary"
-        
+        tabName = "summary",
+        fluidRow(
+          uiOutput("numberOfPCs"),
+          plotOutput("pcaImportancePlot"),
+          plotOutput("pcaGridPlot")
+        )
       ),
-      
+
       # DESeq2 #####
       tabItem(
         tabName="DESeq2",
@@ -85,9 +89,9 @@ shinyUI(
         )
       ),
       tabItem(
-       tabName = "edgeR" 
+       tabName = "edgeR"
       )
-      
+
     )
   )
 ))

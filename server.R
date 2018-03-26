@@ -56,6 +56,22 @@ shinyServer(function(input, output,session) {
     options=list(scrollX=T,scroller=T)
   )
 
+# TODO: Fix reactive behavior here
+  output$numberOfPCs <-renderUI({
+    if(is.null(input$expressionDataFile))
+      return()
+    numericInput("numberOfPCs","Number of PCs to display",2)
+  })
+
+  observe({
+    if (is.null(input$numberOfPCs)){
+      return()
+    }
+    pcaPlots <- samplePCA(expressionData(),input$numberOfPCs)
+    output$pcaImportancePlot<-renderPlot({pcaPlots$variancePlot})
+    output$pcaGridPlot<-renderPlot({pcaPlots$pcaGrid})
+
+  })
 
   # Design choice checkboxes ####
   output$designChoicesDESeq <- renderUI({ #selects
@@ -71,6 +87,10 @@ shinyServer(function(input, output,session) {
                        selected = NULL)
   })
 
+
+
+# TODO: Correlation plots
+  # DESeq ####
   # User input for pValue, LFC, design of the experiment, and file Prefix
   output$pValueFilterDESeq <-renderUI({numericInput("pValueFilterDESeq","P Value",0.1)})
   output$absFCMinDESeq <-renderUI({numericInput("absFCMinDESeq","Minimum Absolute Fold Change",1)})
@@ -90,7 +110,7 @@ shinyServer(function(input, output,session) {
 
 
 
-  # DESeq ####
+
   observeEvent(
     input$beginDE,# Button beginDE triggers this
     {
