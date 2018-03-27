@@ -63,15 +63,24 @@ shinyServer(function(input, output,session) {
     numericInput("numberOfPCs","Number of PCs to display",2)
   })
 
-  observe({
-    if (is.null(input$numberOfPCs)){
+  observeEvent(
+    input$beginPCA, {
+    if (is.null(input$numberOfPCs))
       return()
-    }
-    pcaPlots <- samplePCA(expressionData(),input$numberOfPCs)
-    output$pcaImportancePlot<-renderPlot({pcaPlots$variancePlot})
-    output$pcaGridPlot<-renderPlot({pcaPlots$pcaGrid})
+
+    withProgress(message="Plotting PCA",value=1/2,{
+        pcaPlots <- samplePCA(expressionData(),input$numberOfPCs)
+        output$pcaImportancePlot<-renderPlot({pcaPlots$variancePlot})
+        incProgress(3/4)
+        output$pcaGridPlot<-renderPlot({pcaPlots$pcaGrid})
+        incProgress(1)
+    })
+
+
 
   })
+
+
 
   # Design choice checkboxes ####
   output$designChoicesDESeq <- renderUI({ #selects

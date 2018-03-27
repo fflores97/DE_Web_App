@@ -55,9 +55,16 @@ shinyUI(
       tabItem(
         tabName = "summary",
         fluidRow(
-          uiOutput("numberOfPCs"),
-          plotOutput("pcaImportancePlot"),
-          plotOutput("pcaGridPlot")
+          box(
+            title="PCA Plot",
+            solidHeader= TRUE,
+            status="info",
+            width=12,
+            actionButton("beginPCA",label="PCA Plot"),
+            uiOutput("numberOfPCs"),
+            plotOutput("pcaImportancePlot"),
+            plotOutput("pcaGridPlot")
+          )
         )
       ),
 
