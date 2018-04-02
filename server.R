@@ -62,39 +62,94 @@ shinyServer(function(input, output,session) {
       return()
     numericInput("numberOfPCs","Number of PCs to display",2)
   })
-
-  observeEvent(
-    input$beginPCA, {
-    if (is.null(input$numberOfPCs))
-      return()
-
-    withProgress(message="Plotting PCA",value=1/2,{
-        pcaPlots <- samplePCA(expressionData(),input$numberOfPCs)
-        output$pcaImportancePlot<-renderPlot({pcaPlots$variancePlot})
-        incProgress(3/4)
-        output$pcaGridPlot<-renderPlot({pcaPlots$pcaGrid})
-        incProgress(1)
-    })
-
-
-
-  })
-
-
-
+  
   # Design choice checkboxes ####
   output$designChoicesDESeq <- renderUI({ #selects
     # If missing input, return to avoid error later in function
     if(is.null(input$colDataFile))
       return()
-
+    
     designChoices <- colnames(colData()) #presents user the choice for DE design
-
+    
     # Create the checkboxes and select none by default
     checkboxGroupInput("userDesignChoiceDESeq", "Choose columns",
                        choices  = designChoices,
                        selected = NULL)
   })
+  
+ 
+  
+  observeEvent(
+    input$beginPCA, {
+    if (is.null(input$numberOfPCs))
+      return()
+      observe({
+      withProgress(message = "Plotting PCA", value = 0, {
+        
+        expressionData <- expressionData()[rowSums(expressionData()) > 10,]
+        expressionData <- expressionData()[,order(colnames(expressionData()))]
+        # Generate design formula
+        designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
+        # Begin DESeq
+        # incProgress(1/4) # Progress indicators
+        dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
+        # incProgress(1/2)
+        dds <- DESeq2::estimateSizeFactors(dds)
+        # incProgress(3/4)
+
+        vsd <- varianceStabilizingTransformation(dds, blind=FALSE)
+        normalizedTableVSD <- assay(vsd)
+        normalizedTableVSD <- normalizedTableVSD[,sort(colnames(normalizedTableVSD))]
+        # # normalizedCountsTable <- as_data_frame(counts(dds, normalized = TRUE),rownames = "Genes")
+        normalizedCountsTable <- counts(dds, normalized = TRUE)
+        #
+        
+        
+        # TODO: Fix behavior of SamplePCA for zero-variance stuff
+        # pcaPlots <- samplePCA(normalizedCountsTable, input$numberOfPCs)
+        # output$pcaImportancePlot <-
+        #   renderPlot({
+        #     pcaPlots$variancePlot
+        #   })
+        # incProgress(1 / 4)
+        # output$pcaGridPlot <- renderPlot({
+        #   pcaPlots$pcaGrid
+        # })
+        # incProgress(1/2)
+
+        
+        
+        correlationPlot <- sampleCorrelation(normalizedCountsTable)
+        output$correlationPlot <- 
+          renderPlot({
+            correlationPlot
+          })
+        incProgress(1)
+      }
+      
+    
+    )
+      })
+
+
+
+  })
+
+
+
+  # # Design choice checkboxes ####
+  # output$designChoicesDESeq <- renderUI({ #selects
+  #   # If missing input, return to avoid error later in function
+  #   if(is.null(input$colDataFile))
+  #     return()
+  # 
+  #   designChoices <- colnames(colData()) #presents user the choice for DE design
+  # 
+  #   # Create the checkboxes and select none by default
+  #   checkboxGroupInput("userDesignChoiceDESeq", "Choose columns",
+  #                      choices  = designChoices,
+  #                      selected = NULL)
+  # })
 
 
 
@@ -130,16 +185,16 @@ shinyServer(function(input, output,session) {
         withProgress(message = "DESeq in Progress",value=0,
         {
         # Filter data for counts that are too low
-          expressionData <- expressionData()[rowSums(expressionData()) > 10,]
-          expressionData <- expressionData()[,order(colnames(expressionData()))]
-          # Generate design formula
-          designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
-          # Begin DESeq
-          incProgress(1/4) # Progress indicators
-          dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
-          incProgress(1/2)
-          dds <- DESeq2::estimateSizeFactors(dds)
-          incProgress(3/4)
+          # expressionData <- expressionData()[rowSums(expressionData()) > 10,]
+          # expressionData <- expressionData()[,order(colnames(expressionData()))]
+          # # Generate design formula
+          # designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
+          # # Begin DESeq
+          # incProgress(1/4) # Progress indicators
+          # dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
+          # incProgress(1/2)
+          # dds <- DESeq2::estimateSizeFactors(dds)
+          # incProgress(3/4)
           dds <- DESeq2::DESeq(dds)
           # Message to the user
           output$DESeqFinishedMessage<-renderText("DESeq Finished!")
