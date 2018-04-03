@@ -85,7 +85,6 @@ shinyServer(function(input, output,session) {
       return()
       observe({
       withProgress(message = "Plotting PCA", value = 0, {
-        
         expressionData <- expressionData()[rowSums(expressionData()) > 10,]
         expressionData <- expressionData()[,order(colnames(expressionData()))]
         # Generate design formula
@@ -106,16 +105,16 @@ shinyServer(function(input, output,session) {
         
         
         # TODO: Fix behavior of SamplePCA for zero-variance stuff
-        # pcaPlots <- samplePCA(normalizedCountsTable, input$numberOfPCs)
-        # output$pcaImportancePlot <-
-        #   renderPlot({
-        #     pcaPlots$variancePlot
-        #   })
-        # incProgress(1 / 4)
-        # output$pcaGridPlot <- renderPlot({
-        #   pcaPlots$pcaGrid
-        # })
-        # incProgress(1/2)
+        pcaPlots <- samplePCA(normalizedCountsTable, input$numberOfPCs)
+        output$pcaImportancePlot <-
+          renderPlot({
+            pcaPlots$importancePlot
+          })
+        incProgress(1 / 4)
+        output$pcaGridPlot <- renderPlot({
+          pcaPlots$pcaPlot
+        })
+        incProgress(1/2)
 
         
         
@@ -185,22 +184,31 @@ shinyServer(function(input, output,session) {
         withProgress(message = "DESeq in Progress",value=0,
         {
         # Filter data for counts that are too low
-          # expressionData <- expressionData()[rowSums(expressionData()) > 10,]
-          # expressionData <- expressionData()[,order(colnames(expressionData()))]
-          # # Generate design formula
-          # designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
-          # # Begin DESeq
-          # incProgress(1/4) # Progress indicators
-          # dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
-          # incProgress(1/2)
-          # dds <- DESeq2::estimateSizeFactors(dds)
-          # incProgress(3/4)
+        expressionData <- expressionData()[rowSums(expressionData()) > 10,]
+        expressionData <- expressionData()[,order(colnames(expressionData()))]
+        # Generate design formula
+        designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
+        # Begin DESeq
+        incProgress(1/4) # Progress indicators
+        dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
+        incProgress(1/2)
+        dds <- DESeq2::estimateSizeFactors(dds)
+        incProgress(3/4)
           dds <- DESeq2::DESeq(dds)
           # Message to the user
           output$DESeqFinishedMessage<-renderText("DESeq Finished!")
           # Download a zip file with the summarized results
-          output$downloadDESeqHandler<-downloadDESeq(deseqData=dds,diffColumn=input$userDesignChoiceDESeq,group1=as.character(input$userGroup1DESeq),group2=as.character(input$userGroup2DESeq),outputFilePrefix=input$filePrefixDESeq,absLog2FCMin=log2(input$absFCMinDESeq),padjFilter=input$pValueFilterDESeq)
-
+          output$downloadDESeqHandler <-
+            downloadDESeq(
+              deseqData = dds,
+              diffColumn = input$userDesignChoiceDESeq,
+              group1 = as.character(input$userGroup1DESeq),
+              group2 = as.character(input$userGroup2DESeq),
+              outputFilePrefix = input$filePrefixDESeq,
+              log2FCMin = log2(input$absFCMinDESeq),
+              padjFilter = input$pValueFilterDESeq
+            )
+          
           # Download Button
           output$downloadDESeqResults<-renderUI({
             downloadButton("downloadDESeqHandler","Download Results")
