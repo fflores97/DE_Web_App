@@ -1,4 +1,5 @@
-shinyUI(dashboardPage(
+shinyUI(
+  dashboardPage(
   skin="purple",
   dashboardHeader(title = "DE Analysis"),
   dashboardSidebar(
@@ -16,10 +17,11 @@ shinyUI(dashboardPage(
     tabItems(
       # Introduction ####
       tabItem(
-        tabName = "intro"
+        tabName = "intro",
+        runcodeUI(code = "shinyjs::alert()",includeShinyjs = T)
       ),
-      
-      # Uploader #### 
+
+      # Uploader ####
       tabItem(
         tabName = "uploader",
         fluidRow(
@@ -28,47 +30,100 @@ shinyUI(dashboardPage(
             solidHeader= TRUE,
             status="info",
             width=12,
-            uploaderExpression(),
-            uploaderColData()
+            uploaderExpressionUI(),
+            uploaderColDataUI()
           )
         ),
         fluidRow(
           box(
-            title="Summary of Expression Data",
+            title="Preview of Expression Data",
             solidHeader = TRUE,
             status="info",
-            width = 12,  
+            width = 12,
             DT::dataTableOutput("expressionSummary",width = "auto"))
         ),
         fluidRow(
           box(
-            title="Summary of Col Data",
+            title="Preview of Col Data",
             solidHeader = TRUE,
             status="info",
-            width = 12,  
+            width = 12,
             DT::dataTableOutput("colDataSummary",width = "auto"))
         )
       ),
       # Summary ####
       tabItem(
-        tabName = "summary"
-        
+        tabName = "summary",
+        fluidRow(
+          column(
+            width=4,
+            box(
+              title="Parameters",
+              solidHeader= TRUE,
+              status="info",
+              width=12,
+              actionButton("beginPCA",label="PCA & Correlation Plots"),
+              uiOutput("designChoicesDESeq"),
+              # uiOutput("userGroup1DESeq"),
+              # uiOutput("userGroup2DESeq"),
+              uiOutput("numberOfPCs")
+            )
+          ),
+          column(
+            width=8,
+            fluidRow(
+              box(
+                title="PCA Plot",
+                solidHeader= TRUE,
+                status="info",
+                width=12,
+                plotOutput("pcaImportancePlot"),
+                plotOutput("pcaGridPlot")
+              ),
+              box(
+                title="Sample Correlation Plot",
+                solidHeader= TRUE,
+                width=12,
+                status="info",
+                plotOutput("correlationPlot")
+              )
+            )
+            
+          )
+        )
       ),
       
       # DESeq2 #####
       tabItem(
         tabName="DESeq2",
-        "Hello",
-        uiOutput("designChoices"),
-        actionButton("beginDE", label = "Action"),
-        textOutput("action"),
-        box(DT::dataTableOutput("res",width = "auto"))
+        fluidRow(
+          box(
+            title="Select Design",
+            solidHeader= TRUE,
+            status="info",
+            width=6,
+            # uiOutput("designChoicesDESeq"),
+            uiOutput("pValueFilterDESeq"),
+            uiOutput("absFCMinDESeq"),
+            uiOutput("userGroup1DESeq"),
+            uiOutput("userGroup2DESeq"),
+            uiOutput("filePrefixDESeq"),
+            actionButton("beginDE", label = "Begin DESeq")
+          ),
+          box(
+            title="Download Results",
+            solidHeader = TRUE,
+            status="info",
+            width=6,
+            textOutput("DESeqFinishedMessage"),
+            uiOutput("downloadDESeqResults")
+          )
+        )
       ),
-      
       tabItem(
-       tabName = "edgeR" 
+       tabName = "edgeR"
       )
-      
+
     )
   )
 ))
