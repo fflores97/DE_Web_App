@@ -85,7 +85,6 @@ shinyServer(function(input, output,session) {
       return()
       observe({
       withProgress(message = "Plotting PCA", value = 0, {
-
         expressionData <- expressionData()[rowSums(expressionData()) > 10,]
         expressionData <- expressionData()[,order(colnames(expressionData()))]
         # Generate design formula
