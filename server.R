@@ -1,9 +1,14 @@
-# library(shinydashboard)
-# library(DT)
-library(DESeq2)
-# source("scripts/DESeq.R")
+# TODO: Eliminate Duplicate DESeq behavior for plots and then DESeq (find out how to use reactive variables from one observe in another one)
+# TODO: EdgeR
+# TODO: Documentation for introduction
+# TODO: Check results with code
+# TODO: Test with multiple data inputs
+# TODO: Deploy and present to lab
+# TODO: Write up for SCRB 91r
+
 options(shiny.trace=T)
 shinyServer(function(input, output,session) {
+  # Setup ####
   session$onSessionEnded(stopApp) # So shiny closes on closing window
   runcodeServer() #Only for testing
 
@@ -78,65 +83,52 @@ shinyServer(function(input, output,session) {
   })
   
  
-  
+  # Correlation and PCA Plots ####
   observeEvent(
     input$beginPCA, {
-    if (is.null(input$numberOfPCs))
-      return()
-      observe({
-      withProgress(message = "Plotting PCA", value = 0, {
-        expressionData <- expressionData()[rowSums(expressionData()) > 10,]
-        expressionData <- expressionData()[,order(colnames(expressionData()))]
-        # Generate design formula
-        designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
-        # Begin DESeq
-        # incProgress(1/4) # Progress indicators
-        dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
-        # incProgress(1/2)
-        dds <- DESeq2::estimateSizeFactors(dds)
-        # incProgress(3/4)
-
-        vsd <- varianceStabilizingTransformation(dds, blind=FALSE)
-        normalizedTableVSD <- assay(vsd)
-        normalizedTableVSD <- normalizedTableVSD[,sort(colnames(normalizedTableVSD))]
-        # # normalizedCountsTable <- as_data_frame(counts(dds, normalized = TRUE),rownames = "Genes")
-        normalizedCountsTable <- counts(dds, normalized = TRUE)
-        #
-        
-        
-        # TODO: Fix behavior of SamplePCA for zero-variance stuff
-        pcaPlots <- samplePCA(normalizedCountsTable, input$numberOfPCs)
-        output$pcaImportancePlot <-
-          renderPlot({
-            pcaPlots$importancePlot
-          })
-        incProgress(1 / 4)
-        output$pcaGridPlot <- renderPlot({
-          pcaPlots$pcaPlot
-        })
-        incProgress(1/2)
-
-        
-        
-        correlationPlot <- sampleCorrelation(normalizedCountsTable)
-        output$correlationPlot <- 
-          renderPlot({
-            correlationPlot
-          })
-        incProgress(1)
-      }
+      if (is.null(input$numberOfPCs))
+        return()
       
-    
-    )
+      observe({
+        withProgress(message = "Plotting PCA", value = 0, {
+          # DE Seq Stuff needed for PCA and correlation #####
+          expressionData <- expressionData()[rowSums(expressionData()) > 10,]
+          expressionData <- expressionData()[,order(colnames(expressionData()))]
+          # Generate design formula
+          designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
+          # Begin DESeq
+          dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
+          dds <- DESeq2::estimateSizeFactors(dds)
+          vsd <- varianceStabilizingTransformation(dds, blind=FALSE)
+          normalizedTableVSD <- assay(vsd)
+          normalizedTableVSD <- normalizedTableVSD[,sort(colnames(normalizedTableVSD))]
+          normalizedCountsTable <- counts(dds, normalized = TRUE)
+
+          # PCA plots #####
+          pcaPlots <- samplePCA(normalizedCountsTable, input$numberOfPCs)
+          output$pcaImportancePlot <-
+            renderPlot({
+              pcaPlots$importancePlot
+            })
+          incProgress(1 / 4)
+          output$pcaGridPlot <- renderPlot({
+            pcaPlots$pcaPlot
+          })
+          incProgress(1/2)
+          
+          # Correlation plot #####
+          correlationPlot <- sampleCorrelation(normalizedCountsTable)
+          output$correlationPlot <- 
+            renderPlot({
+              correlationPlot
+            })
+          incProgress(1)
+        })
       })
-
-
-
   })
 
-
-
-  # # Design choice checkboxes ####
+  # Design choice checkboxes ####
+  
   # output$designChoicesDESeq <- renderUI({ #selects
   #   # If missing input, return to avoid error later in function
   #   if(is.null(input$colDataFile))
@@ -152,7 +144,6 @@ shinyServer(function(input, output,session) {
 
 
 
-# TODO: Correlation plots
   # DESeq ####
   # User input for pValue, LFC, design of the experiment, and file Prefix
   output$pValueFilterDESeq <-renderUI({numericInput("pValueFilterDESeq","P Value",0.1)})
