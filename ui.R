@@ -55,19 +55,44 @@ shinyUI(
       tabItem(
         tabName = "summary",
         fluidRow(
-          box(
-            title="PCA Plot",
-            solidHeader= TRUE,
-            status="info",
-            width=12,
-            actionButton("beginPCA",label="PCA Plot"),
-            uiOutput("numberOfPCs"),
-            plotOutput("pcaImportancePlot"),
-            plotOutput("pcaGridPlot")
+          column(
+            width=4,
+            box(
+              title="Parameters",
+              solidHeader= TRUE,
+              status="info",
+              width=12,
+              actionButton("beginPCA",label="PCA & Correlation Plots"),
+              uiOutput("designChoicesDESeq"),
+              # uiOutput("userGroup1DESeq"),
+              # uiOutput("userGroup2DESeq"),
+              uiOutput("numberOfPCs")
+            )
+          ),
+          column(
+            width=8,
+            fluidRow(
+              box(
+                title="PCA Plot",
+                solidHeader= TRUE,
+                status="info",
+                width=12,
+                plotOutput("pcaImportancePlot"),
+                plotOutput("pcaGridPlot")
+              ),
+              box(
+                title="Sample Correlation Plot",
+                solidHeader= TRUE,
+                width=12,
+                status="info",
+                plotOutput("correlationPlot")
+              )
+            )
+            
           )
         )
       ),
-
+      
       # DESeq2 #####
       tabItem(
         tabName="DESeq2",
@@ -77,7 +102,7 @@ shinyUI(
             solidHeader= TRUE,
             status="info",
             width=6,
-            uiOutput("designChoicesDESeq"),
+            # uiOutput("designChoicesDESeq"),
             uiOutput("pValueFilterDESeq"),
             uiOutput("absFCMinDESeq"),
             uiOutput("userGroup1DESeq"),
