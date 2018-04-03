@@ -144,8 +144,17 @@ shinyServer(function(input, output,session) {
           # Message to the user
           output$DESeqFinishedMessage<-renderText("DESeq Finished!")
           # Download a zip file with the summarized results
-          output$downloadDESeqHandler<-downloadDESeq(deseqData=dds,diffColumn=input$userDesignChoiceDESeq,group1=as.character(input$userGroup1DESeq),group2=as.character(input$userGroup2DESeq),outputFilePrefix=input$filePrefixDESeq,absLog2FCMin=log2(input$absFCMinDESeq),padjFilter=input$pValueFilterDESeq)
-
+          output$downloadDESeqHandler <-
+            downloadDESeq(
+              deseqData = dds,
+              diffColumn = input$userDesignChoiceDESeq,
+              group1 = as.character(input$userGroup1DESeq),
+              group2 = as.character(input$userGroup2DESeq),
+              outputFilePrefix = input$filePrefixDESeq,
+              log2FCMin = log2(input$absFCMinDESeq),
+              padjFilter = input$pValueFilterDESeq
+            )
+          
           # Download Button
           output$downloadDESeqResults<-renderUI({
             downloadButton("downloadDESeqHandler","Download Results")
