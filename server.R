@@ -11,6 +11,7 @@ shinyServer(function(input, output,session) {
   # Setup ####
   session$onSessionEnded(stopApp) # So shiny closes on closing window
   runcodeServer() #Only for testing
+  sessionDir <- tempdir()
 
   # Expression Data Reader ####
   expressionData<-eventReactive(
@@ -118,14 +119,33 @@ shinyServer(function(input, output,session) {
           
           # Correlation plot #####
           correlationPlot <- sampleCorrelation(normalizedCountsTable)
+          
+          
+          
           output$correlationPlot <- 
             renderPlot({
               correlationPlot
             })
           incProgress(1)
           
-          output$downloadPlotHandler <- downloadPlots(pcaPlots$importancePlot, pcaPlots$pcaPlot, plotNames = c("importancePlot.pdf","pcaPlot.pdf"))
-            
+          # Save correlation plot to temporary directory
+          pdf(paste(sessionDir,"/correlationPlot.pdf", sep = ""), width = 12, height=5)
+          print(sampleCorrelation)
+          dev.off()
+          
+          # Similarly, save the other plots with ggsave
+          pcaFileNames <- paste(sessionDir,"/",c("pcaImportancePlot.pdf", "pcaPlot.pdf"), sep = "")
+          mapply(function(plots, i) {ggsave(filename = pcaFileNames[i], device = "pdf", plot = plots)}, plots = pca, i = 1:length(pcaFileNames))
+          
+          # Download handler will put all pdf files into a zip
+          output$downloadPlotHandler <- downloadHandler(
+            filename = "summaryPlots.zip",
+            content = function(file){
+              zip(zipfile = file, files = paste(sessionDir,"/",list.files(path = sessionDir, pattern = "*.pdf"), sep = ""))
+            }
+          )
+          
+          # Renders download button
           output$downloadPlotsButton <- renderUI(downloadButton("downloadPlotHandler", "Download Plots"))
             
           
@@ -152,8 +172,8 @@ shinyServer(function(input, output,session) {
 
   # DESeq ####
   # User input for pValue, LFC, design of the experiment, and file Prefix
-  output$pValueFilterDESeq <-renderUI({numericInput("pValueFilterDESeq","P Value",0.1)})
-  output$absFCMinDESeq <-renderUI({numericInput("absFCMinDESeq","Minimum Absolute Fold Change",1)})
+  output$pValueFilterDESeq <-renderUI({numericInput("pValueFilterDESeq","P Value",0.05)})
+  output$absFCMinDESeq <-renderUI({numericInput("absFCMinDESeq","Minimum Absolute Fold Change",2)})
   output$userGroup1DESeq <-renderUI({
     chosenDesign1<-input$userDesignChoiceDESeq
     groupChoices1<- unique(colData()[chosenDesign1][[1]])

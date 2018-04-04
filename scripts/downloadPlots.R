@@ -31,6 +31,7 @@ downloadPlots <- function(..., plotNames){
       names(plots) <- plotNames
       # fileNames <- paste("~/Desktop/testingR/", names(plots),".pdf")
       fileNames <- paste(gsub('/$','',outputFolder),'/', plotNames, sep = '')
+      
       mapply(function(plots, i) {ggsave(filename = fileNames[i], device = "pdf", plot = plots)}, plots = plots, i = 1:length(fileNames))
       
       zip(zipfile = file, files = fileNames)
