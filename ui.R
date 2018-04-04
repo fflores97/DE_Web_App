@@ -88,7 +88,8 @@ shinyUI(
                   solidHeader= TRUE,
                   width=12,
                   status="info",
-                  plotOutput("correlationPlot")
+                  plotOutput("correlationPlot"),
+                  uiOutput("downloadPlotsButton")
                 )
               )
               

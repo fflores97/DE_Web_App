@@ -1,6 +1,7 @@
 source("scripts/uploader.R")
 source("scripts/DESeq.R")
 source("scripts/downloadDESeq.R")
+source("scripts/downloadPlots.R")
 # source("scripts/samplePCA.R")
 library(shinydashboard)
 library(DT)

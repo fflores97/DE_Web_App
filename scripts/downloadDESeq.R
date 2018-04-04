@@ -11,8 +11,9 @@
 #'
 #' @return A download handler to be used in shiny
 
-downloadDESeq<-function(deseqData,diffColumn,group1,group2,outputFolder=tempdir(),outputFilePrefix="res",log2FCMin,padjFilter){
-    downloadHandler(
+downloadDESeq<-function(deseqData,diffColumn,group1,group2,outputFilePrefix="res",log2FCMin,padjFilter){
+    
+  downloadHandler(
       # filename = "res.csv",
       filename = "res.zip",
       content = function(file) {
@@ -28,6 +29,8 @@ downloadDESeq<-function(deseqData,diffColumn,group1,group2,outputFolder=tempdir(
         # log2FCMin = log2(input$absFCMinDESeq)
         # geneDescCSV = NA
         # padjFilter = input$pValueFilterDESeq
+        outputFolder=tempdir()
+        
         diffDF <- as.data.frame(results(deseqData, contrast = c(diffColumn, group1, group2)))
         diffDF$Gene.Symbol <- rownames(diffDF)
         diffDF <- diffDF[,c(7,1:6)]

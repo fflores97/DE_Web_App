@@ -123,6 +123,12 @@ shinyServer(function(input, output,session) {
               correlationPlot
             })
           incProgress(1)
+          
+          output$downloadPlotHandler <- downloadPlots(pcaPlots$importancePlot, pcaPlots$pcaPlot, plotNames = c("importancePlot.pdf","pcaPlot.pdf"))
+            
+          output$downloadPlotsButton <- renderUI(downloadButton("downloadPlotHandler", "Download Plots"))
+            
+          
         })
       })
   })
