@@ -69,7 +69,10 @@ shinyUI(
                 uiOutput("designChoicesDESeq"),
                 # uiOutput("userGroup1DESeq"),
                 # uiOutput("userGroup2DESeq"),
-                uiOutput("numberOfPCs")
+                uiOutput("numberOfPCs"),
+                uiOutput("automaticClusteringPCA"),
+                uiOutput("clustersPCA"),
+                uiOutput("colorBy")
               )
             ),
             column(

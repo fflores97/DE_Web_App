@@ -1,4 +1,3 @@
-# TODO: Add user input for clustering
 # TODO: Add 3d PCA
 # TODO: Eliminate Duplicate DESeq behavior for plots and then DESeq (find out how to use reactive variables from one observe in another one)
 # TODO: EdgeR
@@ -96,10 +95,38 @@ shinyServer(function(input, output,session) {
     numericInput("numberOfPCs","Number of PCs to display",2)
   })
   
-  output$autoClusteringPCA <- renderUI({
-    
-    
+  
+  output$automaticClusteringPCA <- renderUI({
+    checkboxInput("automaticClusteringPCA", "Automatic k-means?")
   })
+  
+  
+  output$clustersPCA <- renderUI({
+    if (input$automaticClusteringPCA == FALSE)
+      numericInput("clustersPCA", "Number of k-means clusters (1 is no clustering)", 1)
+    else{
+      clusters <- 1
+    }
+  })
+  
+  output$colorBy <- renderUI({
+    # checkboxInput("colorByCluster", "Color by cluster?")
+    radioButtons("colorBy", "Color by:", choiceNames = c("Sample", "Cluster"), choiceValues = c("sample", "cluster"))
+  })
+  
+
+  # output$numberOfPCs <- renderUI({
+  #   output$clustersPCA <- renderUI({
+  #     if (is.null(input$expressionDataFile))
+  #       return()
+  #     radioButtons("clusteringMethod", label = "Clustering Method", choiceNames = c("Automatic", "Manual"), choiceValues = c("automatic", "manual"))
+  #     if (input$clusteringMethod=="manual") {
+  #       numericInput("numberOfClustersPCA", "Number of k-means clusters", 2)
+  #     } 
+  #     numericInput("clusteringPCA","Number of PCs to display", 2)
+  #   })
+  # })
+  
   
   
   # Correlation and PCA Plots --------------------------------------------------
@@ -124,7 +151,14 @@ shinyServer(function(input, output,session) {
           normalizedCountsTable <- counts(dds, normalized = TRUE)
           
           # PCA plots --------------------------------------------------
-          pcaPlots <- samplePCA(normalizedCountsTable, input$numberOfPCs)
+          pcaPlots <- samplePCA(
+            expressionMatrix = normalizedCountsTable,
+            numberOfPCs = input$numberOfPCs,
+            autoClustering = input$automaticClusteringPCA,
+            clusters = input$clustersPCA,
+            colorBy = input$colorBy
+          )
+          
           output$pcaImportancePlot <-
             renderPlot({
               pcaPlots$importancePlot
