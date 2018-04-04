@@ -1,5 +1,8 @@
+# TODO: Add user input for clustering
+# TODO: Add 3d PCA
 # TODO: Eliminate Duplicate DESeq behavior for plots and then DESeq (find out how to use reactive variables from one observe in another one)
 # TODO: EdgeR
+# TODO: Heatmap for a selection of genes
 # TODO: Documentation for introduction
 # TODO: Check results with code
 # TODO: Test with multiple data inputs
@@ -8,11 +11,14 @@
 
 options(shiny.trace=T)
 shinyServer(function(input, output,session) {
-  # Setup ####
+  
+  # Setup -------------------------------------------------------------------
+  
+  
   session$onSessionEnded(stopApp) # So shiny closes on closing window
   runcodeServer() #Only for testing
   sessionDir <- tempdir()
-
+  
   # Expression Data Reader ####
   expressionData<-eventReactive(
     input$uploadExpression, #File is only processed once user clicks a button
@@ -32,44 +38,42 @@ shinyServer(function(input, output,session) {
         check.names = F
       )
     })
-
-  # Expression Data Summary ####
+  
+  # Expression Data Reader --------------------------------------------------
+  
+  
+  # Expression Data Summary --------------------------------------------------
   output$expressionSummary<-DT::renderDataTable(
     expressionData()[1:100,c(1:input$expressionNumber)], # makes a js table that is nicer to explore
     options=list(scrollX=T,scroller=T)
   )
-
-  # Column Data Reader ####
+  
+  # Column Data Reader --------------------------------------------------
   colData<-reactive({ # Same as before
-      if (is.null(input$colDataFile)) {
-        # User has not uploaded a file yet
-        return(NULL)
-      }
-      inFileColData<-input$colDataFile
-      read.csv(
-        file = inFileColData$datapath,
-        header = input$colDataHeader,
-        sep = input$colDataSep,
-        quote = input$colDataQuote,
-        row.names = 1
-      )
-    })
-
-
-  # Col Data Summary ####
+    if (is.null(input$colDataFile)) {
+      # User has not uploaded a file yet
+      return(NULL)
+    }
+    inFileColData<-input$colDataFile
+    read.csv(
+      file = inFileColData$datapath,
+      header = input$colDataHeader,
+      sep = input$colDataSep,
+      quote = input$colDataQuote,
+      row.names = 1
+    )
+  })
+  
+  
+  # Col Data Summary --------------------------------------------------
   output$colDataSummary<-DT::renderDataTable( # Same as before
     colData()[,c(1:input$colDataNumber)],
     options=list(scrollX=T,scroller=T)
   )
-
-# TODO: Fix reactive behavior here
-  output$numberOfPCs <-renderUI({
-    if(is.null(input$expressionDataFile))
-      return()
-    numericInput("numberOfPCs","Number of PCs to display",2)
-  })
   
-  # Design choice checkboxes ####
+  
+  
+  # Design choice checkboxes --------------------------------------------------
   output$designChoicesDESeq <- renderUI({ #selects
     # If missing input, return to avoid error later in function
     if(is.null(input$colDataFile))
@@ -83,8 +87,22 @@ shinyServer(function(input, output,session) {
                        selected = NULL)
   })
   
- 
-  # Correlation and PCA Plots ####
+  
+  # PCA parameters ----------------------------------------------------------
+  
+  output$numberOfPCs <-renderUI({
+    if(is.null(input$expressionDataFile))
+      return()
+    numericInput("numberOfPCs","Number of PCs to display",2)
+  })
+  
+  output$autoClusteringPCA <- renderUI({
+    
+    
+  })
+  
+  
+  # Correlation and PCA Plots --------------------------------------------------
   observeEvent(
     input$beginPCA, {
       if (is.null(input$numberOfPCs))
@@ -92,7 +110,7 @@ shinyServer(function(input, output,session) {
       
       observe({
         withProgress(message = "Plotting PCA", value = 0, {
-          # DE Seq Stuff needed for PCA and correlation #####
+          # DE Seq Stuff needed for PCA and correlation --------------------------------------------------
           expressionData <- expressionData()[rowSums(expressionData()) > 10,]
           expressionData <- expressionData()[,order(colnames(expressionData()))]
           # Generate design formula
@@ -104,8 +122,8 @@ shinyServer(function(input, output,session) {
           normalizedTableVSD <- assay(vsd)
           normalizedTableVSD <- normalizedTableVSD[,sort(colnames(normalizedTableVSD))]
           normalizedCountsTable <- counts(dds, normalized = TRUE)
-
-          # PCA plots #####
+          
+          # PCA plots --------------------------------------------------
           pcaPlots <- samplePCA(normalizedCountsTable, input$numberOfPCs)
           output$pcaImportancePlot <-
             renderPlot({
@@ -117,7 +135,7 @@ shinyServer(function(input, output,session) {
           })
           incProgress(1/2)
           
-          # Correlation plot #####
+          # Correlation plot --------------------------------------------------
           correlationPlot <- sampleCorrelation(normalizedCountsTable)
           
           
@@ -147,12 +165,12 @@ shinyServer(function(input, output,session) {
           
           # Renders download button
           output$downloadPlotsButton <- renderUI(downloadButton("downloadPlotHandler", "Download Plots"))
-            
+          
           
         })
       })
-  })
-
+    })
+  
   # Design choice checkboxes ####
   
   # output$designChoicesDESeq <- renderUI({ #selects
@@ -167,10 +185,10 @@ shinyServer(function(input, output,session) {
   #                      choices  = designChoices,
   #                      selected = NULL)
   # })
-
-
-
-  # DESeq ####
+  
+  
+  
+  # DESeq --------------------------------------------------
   # User input for pValue, LFC, design of the experiment, and file Prefix
   output$pValueFilterDESeq <-renderUI({numericInput("pValueFilterDESeq","P Value",0.05)})
   output$absFCMinDESeq <-renderUI({numericInput("absFCMinDESeq","Minimum Absolute Fold Change",2)})
@@ -187,50 +205,50 @@ shinyServer(function(input, output,session) {
                  choices  = groupChoices2,
                  selected = NULL)})
   output$filePrefixDESeq <-renderUI({textInput("filePrefixDESeq","File Prefix",value = "")})
-
-
-
-
+  
+  
+  
+  
   observeEvent(
     input$beginDE,# Button beginDE triggers this
     {
-        if (is.null(input$userDesignChoiceDESeq)){
-            return(NULL) # So app doesn't crash without user input
-        }
-        observe({
+      if (is.null(input$userDesignChoiceDESeq)){
+        return(NULL) # So app doesn't crash without user input
+      }
+      observe({
         withProgress(message = "DESeq in Progress",value=0,
-        {
-        # Filter data for counts that are too low
-        expressionData <- expressionData()[rowSums(expressionData()) > 10,]
-        expressionData <- expressionData()[,order(colnames(expressionData()))]
-        # Generate design formula
-        designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
-        # Begin DESeq
-        incProgress(1/4) # Progress indicators
-        dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
-        incProgress(1/2)
-        dds <- DESeq2::estimateSizeFactors(dds)
-        incProgress(3/4)
-          dds <- DESeq2::DESeq(dds)
-          # Message to the user
-          output$DESeqFinishedMessage<-renderText("DESeq Finished!")
-          # Download a zip file with the summarized results
-          output$downloadDESeqHandler <-
-            downloadDESeq(
-              deseqData = dds,
-              diffColumn = input$userDesignChoiceDESeq,
-              group1 = as.character(input$userGroup1DESeq),
-              group2 = as.character(input$userGroup2DESeq),
-              outputFilePrefix = input$filePrefixDESeq,
-              log2FCMin = log2(input$absFCMinDESeq),
-              padjFilter = input$pValueFilterDESeq
-            )
-          
-          # Download Button
-          output$downloadDESeqResults<-renderUI({
-            downloadButton("downloadDESeqHandler","Download Results")
-          })
-        })
+                     {
+                       # Filter data for counts that are too low
+                       expressionData <- expressionData()[rowSums(expressionData()) > 10,]
+                       expressionData <- expressionData()[,order(colnames(expressionData()))]
+                       # Generate design formula
+                       designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
+                       # Begin DESeq
+                       incProgress(1/4) # Progress indicators
+                       dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
+                       incProgress(1/2)
+                       dds <- DESeq2::estimateSizeFactors(dds)
+                       incProgress(3/4)
+                       dds <- DESeq2::DESeq(dds)
+                       # Message to the user
+                       output$DESeqFinishedMessage<-renderText("DESeq Finished!")
+                       # Download a zip file with the summarized results
+                       output$downloadDESeqHandler <-
+                         downloadDESeq(
+                           deseqData = dds,
+                           diffColumn = input$userDesignChoiceDESeq,
+                           group1 = as.character(input$userGroup1DESeq),
+                           group2 = as.character(input$userGroup2DESeq),
+                           outputFilePrefix = input$filePrefixDESeq,
+                           log2FCMin = log2(input$absFCMinDESeq),
+                           padjFilter = input$pValueFilterDESeq
+                         )
+                       
+                       # Download Button
+                       output$downloadDESeqResults<-renderUI({
+                         downloadButton("downloadDESeqHandler","Download Results")
+                       })
+                     })
       })
     })
 })
