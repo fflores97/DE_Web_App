@@ -84,7 +84,8 @@ shinyUI(
                   status="info",
                   width=12,
                   plotOutput("pcaImportancePlot"),
-                  plotOutput("pcaGridPlot")
+                  plotOutput("pcaGridPlot"),
+                  plotlyOutput("pca3dPlot")
                 ),
                 box(
                   title="Sample Correlation Plot",

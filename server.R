@@ -28,13 +28,13 @@ shinyServer(function(input, output,session) {
       }
       inFileExpression<-input$expressionDataFile #just how the import system works
       read.csv(
-        file =inFileExpression$datapath, #access to file
-        header=input$expressionHeader, #asking user if header should be included
-        sep=input$expressionSep, #asking user for separator
-        quote=input$expressionQuote, #asking user for quote
-        stringsAsFactors = F,
+        file = inFileExpression$datapath, #access to file
+        header = input$expressionHeader, #asking user if header should be included
+        sep = input$expressionSep, #asking user for separator
+        quote = input$expressionQuote, #asking user for quote
+        stringsAsFactors = FALSE,
         row.names = 1,
-        check.names = F
+        check.names = FALSE
       )
     })
   
@@ -44,7 +44,7 @@ shinyServer(function(input, output,session) {
   # Expression Data Summary --------------------------------------------------
   output$expressionSummary<-DT::renderDataTable(
     expressionData()[1:100,c(1:input$expressionNumber)], # makes a js table that is nicer to explore
-    options=list(scrollX=T,scroller=T)
+    options = list(scrollX = TRUE, scroller = TRUE)
   )
   
   # Column Data Reader --------------------------------------------------
@@ -70,8 +70,6 @@ shinyServer(function(input, output,session) {
     options=list(scrollX=T,scroller=T)
   )
   
-  
-  
   # Design choice checkboxes --------------------------------------------------
   output$designChoicesDESeq <- renderUI({ #selects
     # If missing input, return to avoid error later in function
@@ -86,7 +84,6 @@ shinyServer(function(input, output,session) {
                        selected = NULL)
   })
   
-  
   # PCA parameters ----------------------------------------------------------
   
   output$numberOfPCs <-renderUI({
@@ -95,11 +92,9 @@ shinyServer(function(input, output,session) {
     numericInput("numberOfPCs","Number of PCs to display",2)
   })
   
-  
   output$automaticClusteringPCA <- renderUI({
     checkboxInput("automaticClusteringPCA", "Automatic k-means?")
   })
-  
   
   output$clustersPCA <- renderUI({
     if (input$automaticClusteringPCA == FALSE)
@@ -111,23 +106,13 @@ shinyServer(function(input, output,session) {
   
   output$colorBy <- renderUI({
     # checkboxInput("colorByCluster", "Color by cluster?")
-    radioButtons("colorBy", "Color by:", choiceNames = c("Sample", "Cluster"), choiceValues = c("sample", "cluster"))
+    radioButtons(
+      inputId = "colorBy", 
+      label = "Color by:", 
+      choiceNames = c("Sample", "Cluster"), 
+      choiceValues = c("sample", "cluster")
+    )
   })
-  
-
-  # output$numberOfPCs <- renderUI({
-  #   output$clustersPCA <- renderUI({
-  #     if (is.null(input$expressionDataFile))
-  #       return()
-  #     radioButtons("clusteringMethod", label = "Clustering Method", choiceNames = c("Automatic", "Manual"), choiceValues = c("automatic", "manual"))
-  #     if (input$clusteringMethod=="manual") {
-  #       numericInput("numberOfClustersPCA", "Number of k-means clusters", 2)
-  #     } 
-  #     numericInput("clusteringPCA","Number of PCs to display", 2)
-  #   })
-  # })
-  
-  
   
   # Correlation and PCA Plots --------------------------------------------------
   observeEvent(
@@ -140,14 +125,13 @@ shinyServer(function(input, output,session) {
           # DE Seq Stuff needed for PCA and correlation --------------------------------------------------
           expressionData <- expressionData()[rowSums(expressionData()) > 10,]
           expressionData <- expressionData()[,order(colnames(expressionData()))]
+          
           # Generate design formula
           designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
+          
           # Begin DESeq
-          dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
+          dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(), colData = colData(), design = designFormula)
           dds <- DESeq2::estimateSizeFactors(dds)
-          vsd <- varianceStabilizingTransformation(dds, blind=FALSE)
-          normalizedTableVSD <- assay(vsd)
-          normalizedTableVSD <- normalizedTableVSD[,sort(colnames(normalizedTableVSD))]
           normalizedCountsTable <- counts(dds, normalized = TRUE)
           
           # PCA plots --------------------------------------------------
@@ -159,25 +143,20 @@ shinyServer(function(input, output,session) {
             colorBy = input$colorBy
           )
           
-          output$pcaImportancePlot <-
-            renderPlot({
-              pcaPlots$importancePlot
-            })
+          output$pcaImportancePlot <- renderPlot({pcaPlots$importancePlot})
+          
           incProgress(1 / 4)
-          output$pcaGridPlot <- renderPlot({
-            pcaPlots$pcaPlot
-          })
+          
+          output$pcaGridPlot <- renderPlot({pcaPlots$pcaPlot})
+          
+          output$pca3dPlot <- plotly::renderPlotly({pcaPlots$pca3dPlot})
           incProgress(1/2)
           
           # Correlation plot --------------------------------------------------
           correlationPlot <- sampleCorrelation(normalizedCountsTable)
           
+          output$correlationPlot <- renderPlot({correlationPlot})
           
-          
-          output$correlationPlot <- 
-            renderPlot({
-              correlationPlot
-            })
           incProgress(1)
           
           # Save correlation plot to temporary directory
@@ -187,7 +166,11 @@ shinyServer(function(input, output,session) {
           
           # Similarly, save the other plots with ggsave
           pcaFileNames <- paste(sessionDir,"/",c("pcaImportancePlot.pdf", "pcaPlot.pdf"), sep = "")
-          mapply(function(plots, i) {ggsave(filename = pcaFileNames[i], device = "pdf", plot = plots)}, plots = pca, i = 1:length(pcaFileNames))
+          mapply(
+            function(plots, i) { ggsave(filename = pcaFileNames[i], device = "pdf", plot = plots) }, 
+            plots = pca[-4], 
+            i = 1:length(pcaFileNames)
+          )
           
           # Download handler will put all pdf files into a zip
           output$downloadPlotHandler <- downloadHandler(
@@ -199,8 +182,6 @@ shinyServer(function(input, output,session) {
           
           # Renders download button
           output$downloadPlotsButton <- renderUI(downloadButton("downloadPlotHandler", "Download Plots"))
-          
-          
         })
       })
     })
@@ -225,64 +206,76 @@ shinyServer(function(input, output,session) {
   # DESeq --------------------------------------------------
   # User input for pValue, LFC, design of the experiment, and file Prefix
   output$pValueFilterDESeq <-renderUI({numericInput("pValueFilterDESeq","P Value",0.05)})
+  
   output$absFCMinDESeq <-renderUI({numericInput("absFCMinDESeq","Minimum Absolute Fold Change",2)})
+  
   output$userGroup1DESeq <-renderUI({
     chosenDesign1<-input$userDesignChoiceDESeq
     groupChoices1<- unique(colData()[chosenDesign1][[1]])
-    radioButtons("userGroup1DESeq", "Choose Group 1",
-                 choices  = groupChoices1,
-                 selected = NULL)})
+    radioButtons(
+      inputId = "userGroup1DESeq", 
+      label = "Choose Group 1",
+      choices  = groupChoices1,
+      selected = NULL
+    )
+  })
+  
   output$userGroup2DESeq <-renderUI({
     chosenDesign2<-input$userDesignChoiceDESeq
     groupChoices2<- unique(colData()[chosenDesign2][[1]])
-    radioButtons("userGroup2DESeq", "Choose Group 2 (control)",
-                 choices  = groupChoices2,
-                 selected = NULL)})
+    radioButtons(
+      inputId = "userGroup2DESeq", 
+      label = "Choose Group 2 (control)",
+      choices  = groupChoices2,
+      selected = NULL
+    )
+  })
+  
   output$filePrefixDESeq <-renderUI({textInput("filePrefixDESeq","File Prefix",value = "")})
-  
-  
-  
-  
+
   observeEvent(
-    input$beginDE,# Button beginDE triggers this
+    input$beginDE,# Button beginDE triggers analysis
     {
       if (is.null(input$userDesignChoiceDESeq)){
         return(NULL) # So app doesn't crash without user input
       }
       observe({
-        withProgress(message = "DESeq in Progress",value=0,
-                     {
-                       # Filter data for counts that are too low
-                       expressionData <- expressionData()[rowSums(expressionData()) > 10,]
-                       expressionData <- expressionData()[,order(colnames(expressionData()))]
-                       # Generate design formula
-                       designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
-                       # Begin DESeq
-                       incProgress(1/4) # Progress indicators
-                       dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
-                       incProgress(1/2)
-                       dds <- DESeq2::estimateSizeFactors(dds)
-                       incProgress(3/4)
-                       dds <- DESeq2::DESeq(dds)
-                       # Message to the user
-                       output$DESeqFinishedMessage<-renderText("DESeq Finished!")
-                       # Download a zip file with the summarized results
-                       output$downloadDESeqHandler <-
-                         downloadDESeq(
-                           deseqData = dds,
-                           diffColumn = input$userDesignChoiceDESeq,
-                           group1 = as.character(input$userGroup1DESeq),
-                           group2 = as.character(input$userGroup2DESeq),
-                           outputFilePrefix = input$filePrefixDESeq,
-                           log2FCMin = log2(input$absFCMinDESeq),
-                           padjFilter = input$pValueFilterDESeq
-                         )
-                       
-                       # Download Button
-                       output$downloadDESeqResults<-renderUI({
-                         downloadButton("downloadDESeqHandler","Download Results")
-                       })
-                     })
+        withProgress(
+          message = "DESeq in Progress",
+          value=0, {
+            # Filter data for counts that are too low
+            expressionData <- expressionData()[rowSums(expressionData()) > 10,]
+            expressionData <- expressionData()[,order(colnames(expressionData()))]
+            
+            # Generate design formula
+            designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
+            
+            # Begin DESeq
+            incProgress(1/4) # Progress indicators
+            dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
+            incProgress(1/2)
+            dds <- DESeq2::estimateSizeFactors(dds)
+            incProgress(3/4)
+            dds <- DESeq2::DESeq(dds)
+            
+            # Message to the user
+            output$DESeqFinishedMessage<-renderText("DESeq Finished!")
+            
+            # Download a zip file with the summarized results
+            output$downloadDESeqHandler <-
+              downloadDESeq(
+                deseqData = dds,
+                diffColumn = input$userDesignChoiceDESeq,
+                group1 = as.character(input$userGroup1DESeq),
+                group2 = as.character(input$userGroup2DESeq),
+                outputFilePrefix = input$filePrefixDESeq,
+                log2FCMin = log2(input$absFCMinDESeq),
+                padjFilter = input$pValueFilterDESeq
+              )
+            
+            # Download Button
+            output$downloadDESeqResults<-renderUI({downloadButton("downloadDESeqHandler","Download Results")})
+          })
       })
     })
 })

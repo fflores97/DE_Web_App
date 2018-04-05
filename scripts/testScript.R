@@ -8,13 +8,14 @@ print(sampleCorrelation)
 dev.off()
 
 autoClustering <- FALSE
-clusters <- 3
+clusters <- 2
 numberOfPCs <- 3
 
 
-pcaPlots <- samplePCA(
+pca <- samplePCA(
   expressionMatrix,
   numberOfPCs = numberOfPCs,
   autoClustering = autoClustering,
   clusters = clusters
 )
+
