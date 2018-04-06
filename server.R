@@ -164,13 +164,16 @@ shinyServer(function(input, output,session) {
           print(sampleCorrelation)
           dev.off()
           
-          # Similarly, save the other plots with ggsave
-          pcaFileNames <- paste(sessionDir,"/",c("pcaImportancePlot.pdf", "pcaPlot.pdf"), sep = "")
+          # Similarly, save the other 2D plots with ggsave
+          pcaFileNames <- paste(sessionDir,"/",names(pcaPlots), ".pdf", sep = "")
           mapply(
             function(plots, i) { ggsave(filename = pcaFileNames[i], device = "pdf", plot = plots) }, 
-            plots = pca[-4], 
-            i = 1:length(pcaFileNames)
+            plots = pcaPlots[1:(length(pcaPlots)-1)], 
+            i = 1:(length(pcaFileNames)-1)
           )
+          
+          # Save 3D Snapshot
+          
           
           # Download handler will put all pdf files into a zip
           output$downloadPlotHandler <- downloadHandler(
