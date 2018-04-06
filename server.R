@@ -149,6 +149,8 @@ shinyServer(function(input, output,session) {
           
           output$pcaGridPlot <- renderPlot({pcaPlots$pcaPlot})
           
+          output$pcaClusteringPlot <- renderPlot({pcaPlots$clusteringPlot})
+          
           output$pca3dPlot <- plotly::renderPlotly({pcaPlots$pca3dPlot})
           incProgress(1/2)
           
