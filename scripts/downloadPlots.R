@@ -1,8 +1,8 @@
 
-gridPlot <- pca$pcaPlot
-importancePlot <- pca$importancePlot
-outputFolder <- tempdir()
-plotNames <- c("pcaPlot", "importancePlot")
+# gridplot <- pca$pcaplot
+# importanceplot <- pca$importanceplot
+# outputfolder <- tempdir()
+# plotnames <- c("pcaplot", "importanceplot")
 
 downloadPlots <- function(..., plotNames){
 
