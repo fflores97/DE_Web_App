@@ -1,4 +1,3 @@
-# TODO: Add 3d PCA
 # TODO: Eliminate Duplicate DESeq behavior for plots and then DESeq (find out how to use reactive variables from one observe in another one)
 # TODO: EdgeR
 # TODO: Heatmap for a selection of genes
@@ -113,7 +112,8 @@ shinyServer(function(input, output,session) {
       choiceValues = c("sample", "cluster")
     )
   })
-  
+ 
+  rv <- reactiveValues() 
   # Correlation and PCA Plots --------------------------------------------------
   observeEvent(
     input$beginPCA, {
@@ -122,6 +122,8 @@ shinyServer(function(input, output,session) {
       
       observe({
         withProgress(message = "Plotting PCA", value = 0, {
+          
+          
           # DE Seq Stuff needed for PCA and correlation --------------------------------------------------
           expressionData <- expressionData()[rowSums(expressionData()) > 10,]
           expressionData <- expressionData()[,order(colnames(expressionData()))]
@@ -132,6 +134,7 @@ shinyServer(function(input, output,session) {
           # Begin DESeq
           dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(), colData = colData(), design = designFormula)
           dds <- DESeq2::estimateSizeFactors(dds)
+          
           normalizedCountsTable <- counts(dds, normalized = TRUE)
           
           # PCA plots --------------------------------------------------
@@ -152,6 +155,7 @@ shinyServer(function(input, output,session) {
           output$pcaClusteringPlot <- renderPlot({pcaPlots$clusteringPlot})
           
           output$pca3dPlot <- plotly::renderPlotly({pcaPlots$pca3dPlot})
+          
           incProgress(1/2)
           
           # Correlation plot --------------------------------------------------
@@ -159,11 +163,9 @@ shinyServer(function(input, output,session) {
           
           output$correlationPlot <- renderPlot({correlationPlot})
           
-          incProgress(1)
-          
           # Save correlation plot to temporary directory
           pdf(paste(sessionDir,"/correlationPlot.pdf", sep = ""), width = 12, height=5)
-          print(sampleCorrelation)
+          print(correlationPlot)
           dev.off()
           
           # Similarly, save the other 2D plots with ggsave
@@ -174,9 +176,6 @@ shinyServer(function(input, output,session) {
             i = 1:(length(pcaFileNames)-1)
           )
           
-          # Save 3D Snapshot
-          
-          
           # Download handler will put all pdf files into a zip
           output$downloadPlotHandler <- downloadHandler(
             filename = "summaryPlots.zip",
@@ -185,8 +184,11 @@ shinyServer(function(input, output,session) {
             }
           )
           
+          incProgress(1)
           # Renders download button
           output$downloadPlotsButton <- renderUI(downloadButton("downloadPlotHandler", "Download Plots"))
+          
+          rv$dds <- dds
         })
       })
     })
@@ -248,21 +250,25 @@ shinyServer(function(input, output,session) {
         withProgress(
           message = "DESeq in Progress",
           value=0, {
-            # Filter data for counts that are too low
-            expressionData <- expressionData()[rowSums(expressionData()) > 10,]
-            expressionData <- expressionData()[,order(colnames(expressionData()))]
-            
-            # Generate design formula
-            designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
-            
-            # Begin DESeq
-            incProgress(1/4) # Progress indicators
-            dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
-            incProgress(1/2)
-            dds <- DESeq2::estimateSizeFactors(dds)
+            if (!exists("rv$dds")) {
+              # Filter data for counts that are too low
+              expressionData <- expressionData()[rowSums(expressionData()) > 10,]
+              expressionData <- expressionData()[,order(colnames(expressionData()))]
+              
+              # Generate design formula
+              designFormula <- as.formula(paste("", paste(input$userDesignChoiceDESeq, collapse=" + "), sep="~ "))
+              
+              # Begin DESeq
+              incProgress(1/4) # Progress indicators
+              dds <- DESeq2::DESeqDataSetFromMatrix(countData = expressionData(),colData=colData(),design = designFormula)
+              incProgress(1/2)
+              dds <- DESeq2::estimateSizeFactors(dds)
+              rv$dds <- dds
+            }
+
             incProgress(3/4)
-            dds <- DESeq2::DESeq(dds)
-            
+            dds <- DESeq2::DESeq(rv$dds)
+
             # Message to the user
             output$DESeqFinishedMessage<-renderText("DESeq Finished!")
             

@@ -22,7 +22,7 @@ shinyUI(
         # Introduction ------------------------------------------------------------
         tabItem(
           tabName = "intro",
-          runcodeUI(code = "shinyjs::alert()",includeShinyjs = T)
+          runcodeUI(code = "shinyjs::alert()", includeShinyjs = T)
         ),
         # Uploader ----------------------------------------------------------------
         tabItem(
@@ -33,8 +33,15 @@ shinyUI(
               solidHeader= TRUE,
               status="info",
               width=12,
-              uploaderExpressionUI(),
-              uploaderColDataUI()
+                uploaderExpressionUI(),
+                uploaderColDataUI(),
+              box(
+                title="Experiment Design",
+                solidHeader= TRUE,
+                status="info",
+                width=12,
+                uiOutput("designChoicesDESeq")
+              )
             )
           ),
           fluidRow(
@@ -43,7 +50,7 @@ shinyUI(
               solidHeader = TRUE,
               status="info",
               width = 12,
-              DT::dataTableOutput("expressionSummary",width = "auto"))
+              DT::dataTableOutput("expressionSummary", width = "auto"))
           ),
           fluidRow(
             box(
@@ -51,55 +58,52 @@ shinyUI(
               solidHeader = TRUE,
               status="info",
               width = 12,
-              DT::dataTableOutput("colDataSummary",width = "auto"))
+              DT::dataTableOutput("colDataSummary", width = "auto"))
           )
         ),
         # Summary -----------------------------------------------------------------
         tabItem(
           tabName = "summary",
           fluidRow(
-            column(
-              width=4,
-              box(
-                title="Parameters",
-                solidHeader= TRUE,
-                status="info",
-                width=12,
-                actionButton("beginPCA",label="PCA & Correlation Plots"),
-                uiOutput("designChoicesDESeq"),
+            box(
+              title = "Parameters",
+              solidHeader = TRUE,
+              status ="info",
+              width = 12,
+              column(
+                width = 6,
+                # uiOutput("designChoicesDESeq"),
                 # uiOutput("userGroup1DESeq"),
                 # uiOutput("userGroup2DESeq"),
                 uiOutput("numberOfPCs"),
                 uiOutput("automaticClusteringPCA"),
+                actionButton("beginPCA", label = "PCA & Correlation Plots")
+              ),
+              column(
+                width = 6,
                 uiOutput("clustersPCA"),
-                uiOutput("colorBy")
+                uiOutput("colorBy"),
+                uiOutput("downloadPlotsButton")
               )
+            )
+          ),
+          fluidRow(
+            box(
+              title = "PCA Plot",
+              solidHeader = TRUE,
+              status ="info",
+              width = 12,
+              plotOutput("pcaImportancePlot"),
+              plotOutput("pcaGridPlot"),
+              plotlyOutput("pca3dPlot"),
+              plotOutput("pcaClusteringPlot")
             ),
-            column(
-              width=8,
-              fluidRow(
-                box(
-                  title="PCA Plot",
-                  solidHeader= TRUE,
-                  status="info",
-                  width=12,
-                  plotOutput("pcaImportancePlot"),
-                  plotOutput("pcaGridPlot"),
-                  plotlyOutput("pca3dPlot"),
-                  plotOutput("pcaClusteringPlot")
-                ),
-                box(
-                  title="Sample Correlation Plot",
-                  solidHeader= TRUE,
-                  width=12,
-                  status="info",
-                  plotOutput("correlationPlot"),
-                  uiOutput("downloadPlotsButton")
-                )
-              )
-              
-              
-              
+            box(
+              title="Sample Correlation Plot",
+              solidHeader = TRUE,
+              width = 12,
+              status = "info",
+              plotOutput("correlationPlot")
             )
           )
         ),
@@ -110,9 +114,9 @@ shinyUI(
           fluidRow(
             box(
               title="Select Design",
-              solidHeader= TRUE,
-              status="info",
-              width=6,
+              solidHeader = TRUE,
+              status = "info",
+              width = 6,
               # uiOutput("designChoicesDESeq"),
               uiOutput("pValueFilterDESeq"),
               uiOutput("absFCMinDESeq"),
@@ -124,8 +128,8 @@ shinyUI(
             box(
               title="Download Results",
               solidHeader = TRUE,
-              status="info",
-              width=6,
+              status = "info",
+              width = 6,
               textOutput("DESeqFinishedMessage"),
               uiOutput("downloadDESeqResults")
             )
